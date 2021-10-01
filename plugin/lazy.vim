@@ -36,6 +36,7 @@ fun! s:vim(fileType, indent)
         endfor
         call setline(linePtn, repeat(" ", spaces) . "fun! " . parts[1] . "(" . join(args, ', ') . ")")
         call append(linePtn, [repeat(" ", spaces) . a:indent, repeat(" ", spaces) . "endfun"])
+        call cursor(linePtn + 1, spaces + len(a:indent))
     elseif parts[0] == 'if'
         let cods = []
         let cod = ['if']
@@ -52,15 +53,19 @@ fun! s:vim(fileType, indent)
         endfor
         call setline(linePtn, repeat(" ", spaces) . join(cods[0], " "))
         call append(linePtn, repeat(" ", spaces) . a:indent)
+        let save = linePtn
         let linePtn += 1
         for cod in cods[1:-1]
             call append(linePtn, [repeat(" ", spaces) . join(cod, " "), repeat(" ", spaces) . a:indent])
             let linePtn += 2
         endfor
         call append(linePtn, repeat(" ", spaces) . "endif")
+        call cursor(save + 1, spaces + len(a:indent))
     elseif parts[0] == 'wle'
         call setline(linePtn, repeat(" ", spaces) . "while " . join(parts[1:-1], " "))
         call append(linePtn, [repeat(" ", spaces) . a:indent, repeat(" ", spaces) . "endwhile"])
+        call cursor(linePtn + 1, spaces + len(a:indent))
+    elseif parts[0] == 'if'
     elseif parts[0] == 'for'
         if len(parts) == 2
             return
@@ -74,7 +79,7 @@ fun! s:vim(fileType, indent)
     endif
 endfun
 
-imap <C-l> <Esc>:call Lazy()<CR>
-vmap <C-l> :call Lazy()<CR>
-nmap <C-l> :call Lazy()<CR>
+imap <C-l> <Esc>:call Lazy()<CR>a
+vmap <C-l> :call Lazy()<CR>a
+nmap <C-l> :call Lazy()<CR>a
 
