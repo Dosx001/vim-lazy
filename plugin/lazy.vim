@@ -78,9 +78,10 @@ fun! s:vim(line, linePtn, spaces)
             let args = split(a:line[2], ">")
             call s:for(a:linePtn, a:spaces, a:line[1], args)
         elseif a:line[2] == "in"
-            return
+            call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
         elseif a:line[2] == "of"
-            return
+            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in range(len(" . a:line[3] . "))")
+            call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
         endif
     endif
 endfun
