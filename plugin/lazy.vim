@@ -29,8 +29,12 @@ fun! s:count(string)
 endfun
 
 fun! s:for(linePtn, spaces, var, args, braces)
-    let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
-    call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in range(" . args . ")" . a:braces[0])
+    if type(a:args) == 3
+        let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
+        call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in range(" . args . ")" . a:braces[0])
+    else
+        call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in " . a:args . a:braces[0])
+    endif
     let for = [repeat(" ", a:spaces) . s:indent]
     if a:braces[1] != ""
         let for = add(for, repeat(" ", a:spaces) . a:braces[1])
@@ -64,11 +68,9 @@ fun! s:py(line, linePtn, spaces)
             let args = split(a:line[2], ">")
             call s:for(a:linePtn, a:spaces, a:line[1], args, [":", ""])
         elseif a:line[2] == "in"
-            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in " . a:line[3] . ":")
-            call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+            call s:for(a:linePtn, a:spaces, a:line[1], a:line[3], [":", ""])
         elseif a:line[2] == "of"
-            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in range(len(" . a:line[3] . ")):")
-            call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+            call s:for(a:linePtn, a:spaces, a:line[1], "range(len(" . a:line[3] . "))", [":", ""])
         endif
     elseif a:line[0] == 'cls'
         
@@ -119,10 +121,9 @@ fun! s:vim(line, linePtn, spaces)
             let args = split(a:line[2], ">")
             call s:for(a:linePtn, a:spaces, a:line[1], args, ["", "endfor"])
         elseif a:line[2] == "in"
-            call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
+            call s:for(a:linePtn, a:spaces, a:line[1], a:line[3], ["", "endfor"])
         elseif a:line[2] == "of"
-            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in range(len(" . a:line[3] . "))")
-            call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
+            call s:for(a:linePtn, a:spaces, a:line[1], "range(len(" . a:line[3] . "))", ["", "endfor"])
         endif
     elseif a:line[0] == "cls"
         call s:msg("Vimscript")
