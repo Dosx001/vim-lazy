@@ -12,8 +12,10 @@ fun! Lazy()
         let line = getline('.')
         let spaces = s:count(line)
         let line = split(line, ' ')
-        let linePtn = line('.')
-        call Func(line, linePtn, spaces)
+        if len(line) != 0
+            let linePtn = line('.')
+            call Func(line, linePtn, spaces)
+        endif
     endif
 endfun
 
