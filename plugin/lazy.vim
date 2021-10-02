@@ -28,6 +28,16 @@ fun! s:count(string)
     endfor
 endfun
 
+fun! s:function(line, linePtn, spaces, braces, key)
+    let args = []
+    for arg in a:line[2:-1]
+        let args = add(args, arg)
+    endfor
+    call setline(a:linePtn, repeat(" ", a:spaces) . a:key . " " . a:line[1] . "(" . join(args, ', ') . ")" . a:braces[0])
+    call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . a:braces[1]])
+    call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+endfun
+
 fun! s:forLoop(line, linePtn, spaces, braces)
     if len(a:line) == 2
         let args = split(a:line[1], ">")
@@ -73,7 +83,7 @@ endfun
 
 fun! s:py(line, linePtn, spaces)
     if a:line[0] == 'fun'
-        
+        call s:function(a:line, a:linePtn, a:spaces, [":", ""], "def")
     elseif a:line[0] == 'if'
         
     elseif a:line[0] == 'wle'
@@ -87,13 +97,7 @@ endfun
 
 fun! s:vim(line, linePtn, spaces)
     if a:line[0] == 'fun'
-        let args = []
-        for arg in a:line[2:-1]
-            let args = add(args, arg)
-        endfor
-        call setline(a:linePtn, repeat(" ", a:spaces) . "fun! " . a:line[1] . "(" . join(args, ', ') . ")")
-        call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
-        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+        call s:function(a:line, a:linePtn, a:spaces, ["", "endfun"], "fun!")
     elseif a:line[0] == 'if'
         let cods = []
         let cod = ['if']
