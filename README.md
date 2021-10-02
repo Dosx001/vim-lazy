@@ -41,7 +41,7 @@ for 5>20
 ```
 for loop 5 to 19 with steps of 2
 ```vim
-for 5>2>20
+for 5>20>2
 ```
 Naming the variable inside the for loop
 ```python

@@ -1,14 +1,18 @@
 let s:fileType = {
-            \   'vim': {a, b -> s:vim(a, b)},
+            \   'vim': {a, b, c -> s:vim(a, b, c)},
             \}
+let s:indent = ""
 
 fun! Lazy()
-    let fileType = expand('%:e')
-    let Func = get(s:fileType, fileType, 0)
+    let Func = get(s:fileType, expand('%:e'), 0)
     if Func != 0
         let sw = exists('*shiftwidth') ? shiftwidth() : &l:shiftwidth
-        let indent = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
-        call Func(fileType, indent)
+        let s:indent = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
+        let line = getline('.')
+        let spaces = s:count(line)
+        let line = split(line, ' ')
+        let linePtn = line('.')
+        call Func(line, linePtn, spaces)
     endif
 endfun
 
@@ -18,29 +22,31 @@ fun! s:count(string)
         if char == " "
             let i += 1
         else
-            break
+            return i
         endif
     endfor
-    return i
 endfun
 
-fun! s:vim(fileType, indent)
-    let line = getline('.')
-    let spaces = s:count(line)
-    let parts = split(line, ' ')
-    let linePtn = line('.')
-    if parts[0] == 'fun'
+fun! s:for(linePtn, spaces, var, args)
+    let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
+    call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in range(" . args . ")")
+    call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfor"])
+    call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+endfun
+
+fun! s:vim(line, linePtn, spaces)
+    if a:line[0] == 'fun'
         let args = []
-        for arg in parts[2:-1]
+        for arg in a:line[2:-1]
             let args = add(args, arg)
         endfor
-        call setline(linePtn, repeat(" ", spaces) . "fun! " . parts[1] . "(" . join(args, ', ') . ")")
-        call append(linePtn, [repeat(" ", spaces) . a:indent, repeat(" ", spaces) . "endfun"])
-        call cursor(linePtn + 1, spaces + len(a:indent))
-    elseif parts[0] == 'if'
+        call setline(a:linePtn, repeat(" ", a:spaces) . "fun! " . a:line[1] . "(" . join(args, ', ') . ")")
+        call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
+        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+    elseif a:line[0] == 'if'
         let cods = []
         let cod = ['if']
-        for arg in parts[1:-1]
+        for arg in a:line[1:-1]
             if arg == "ef"
                 let cods = add(cods, cod)
                 let cod = ['elseif']
@@ -51,29 +57,29 @@ fun! s:vim(fileType, indent)
                 let cod = add(cod, arg)
             endif
         endfor
-        call setline(linePtn, repeat(" ", spaces) . join(cods[0], " "))
-        call append(linePtn, repeat(" ", spaces) . a:indent)
-        let save = linePtn
-        let linePtn += 1
+        call setline(a:linePtn, repeat(" ", a:spaces) . join(cods[0], " "))
+        call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+        let save = a:linePtn + 1
         for cod in cods[1:-1]
-            call append(linePtn, [repeat(" ", spaces) . join(cod, " "), repeat(" ", spaces) . a:indent])
-            let linePtn += 2
+            call append(save, [repeat(" ", a:spaces) . join(cod, " "), repeat(" ", a:spaces) . s:indent])
+            let save += 2
         endfor
-        call append(linePtn, repeat(" ", spaces) . "endif")
-        call cursor(save + 1, spaces + len(a:indent))
-    elseif parts[0] == 'wle'
-        call setline(linePtn, repeat(" ", spaces) . "while " . join(parts[1:-1], " "))
-        call append(linePtn, [repeat(" ", spaces) . a:indent, repeat(" ", spaces) . "endwhile"])
-        call cursor(linePtn + 1, spaces + len(a:indent))
-    elseif parts[0] == 'if'
-    elseif parts[0] == 'for'
-        if len(parts) == 2
+        call append(save, repeat(" ", a:spaces) . "endif")
+        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+    elseif a:line[0] == 'wle'
+        call setline(a:linePtn, repeat(" ", a:spaces) . "while " . join(a:line[1:-1], " "))
+        call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endwhile"])
+        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+    elseif a:line[0] == 'for'
+        if len(a:line) == 2
+            let args = split(a:line[1], ">")
+            call s:for(a:linePtn, a:spaces, "i", args)
+        elseif len(a:line) == 3
+            let args = split(a:line[2], ">")
+            call s:for(a:linePtn, a:spaces, a:line[1], args)
+        elseif a:line[2] == "in"
             return
-        elseif len(parts) == 3
-            return
-        elseif parts[2] == "in"
-            return
-        elseif parts[2] == "of"
+        elseif a:line[2] == "of"
             return
         endif
     endif
@@ -82,4 +88,3 @@ endfun
 imap <C-l> <Esc>:call Lazy()<CR>a
 vmap <C-l> :call Lazy()<CR>a
 nmap <C-l> :call Lazy()<CR>a
-
