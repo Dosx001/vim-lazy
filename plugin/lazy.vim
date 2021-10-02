@@ -114,7 +114,7 @@ fun! s:vim(line, linePtn, spaces)
                 let cod = add(cod, arg)
             endif
         endfor
-        call setline(a:linePtn, repeat(" ", a:spaces) . join(cods[0], " "))
+        call setline(a:linePtn, repeat(" ", a:spaces) . join(empty(cods) ? cod : cods[0], " "))
         call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
         let save = a:linePtn + 1
         for cod in cods[1:-1]
