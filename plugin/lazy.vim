@@ -39,6 +39,14 @@ fun! s:for(linePtn, spaces, var, args, braces)
     call cursor(a:linePtn + 1, a:spaces + len(s:indent))
 endfun
 
+fun! s:msg(lang)
+    echohl WarningMsg
+    echo a:lang "does not support "
+    echohl Type
+    echon "Classes"
+    echohl None
+endfun
+
 fun! s:py(line, linePtn, spaces)
     if a:line[0] == 'fun'
         return
@@ -116,6 +124,8 @@ fun! s:vim(line, linePtn, spaces)
             call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in range(len(" . a:line[3] . "))")
             call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
         endif
+    elseif a:line[0] == "cls"
+        call s:msg("Vimscript")
     endif
 endfun
 
