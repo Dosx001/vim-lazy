@@ -28,6 +28,20 @@ fun! s:count(string)
     endfor
 endfun
 
+fun! s:forLoop(line, linePtn, spaces, braces)
+    if len(a:line) == 2
+        let args = split(a:line[1], ">")
+        call s:for(a:linePtn, a:spaces, "i", args, a:braces)
+    elseif len(a:line) == 3
+        let args = split(a:line[2], ">")
+        call s:for(a:linePtn, a:spaces, a:line[1], args, a:braces)
+    elseif a:line[2] == "in"
+        call s:for(a:linePtn, a:spaces, a:line[1], a:line[3], a:braces)
+    elseif a:line[2] == "of"
+        call s:for(a:linePtn, a:spaces, a:line[1], "range(len(" . a:line[3] . "))", a:braces)
+    endif
+endfun
+
 fun! s:for(linePtn, spaces, var, args, braces)
     if type(a:args) == 3
         let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
@@ -53,7 +67,7 @@ endfun
 
 fun! s:py(line, linePtn, spaces)
     if a:line[0] == 'fun'
-        return
+        
     elseif a:line[0] == 'if'
         
     elseif a:line[0] == 'wle'
@@ -61,17 +75,7 @@ fun! s:py(line, linePtn, spaces)
         call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
         call cursor(a:linePtn + 1, a:spaces + len(s:indent))
     elseif a:line[0] == 'for'
-        if len(a:line) == 2
-            let args = split(a:line[1], ">")
-            call s:for(a:linePtn, a:spaces, "i", args, [":", ""])
-        elseif len(a:line) == 3
-            let args = split(a:line[2], ">")
-            call s:for(a:linePtn, a:spaces, a:line[1], args, [":", ""])
-        elseif a:line[2] == "in"
-            call s:for(a:linePtn, a:spaces, a:line[1], a:line[3], [":", ""])
-        elseif a:line[2] == "of"
-            call s:for(a:linePtn, a:spaces, a:line[1], "range(len(" . a:line[3] . "))", [":", ""])
-        endif
+        call s:forLoop(a:line, a:linePtn, a:spaces, [":", ""])
     elseif a:line[0] == 'cls'
         
     endif
@@ -114,17 +118,7 @@ fun! s:vim(line, linePtn, spaces)
         call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endwhile"])
         call cursor(a:linePtn + 1, a:spaces + len(s:indent))
     elseif a:line[0] == 'for'
-        if len(a:line) == 2
-            let args = split(a:line[1], ">")
-            call s:for(a:linePtn, a:spaces, "i", args, ["", "endfor"])
-        elseif len(a:line) == 3
-            let args = split(a:line[2], ">")
-            call s:for(a:linePtn, a:spaces, a:line[1], args, ["", "endfor"])
-        elseif a:line[2] == "in"
-            call s:for(a:linePtn, a:spaces, a:line[1], a:line[3], ["", "endfor"])
-        elseif a:line[2] == "of"
-            call s:for(a:linePtn, a:spaces, a:line[1], "range(len(" . a:line[3] . "))", ["", "endfor"])
-        endif
+        call s:forLoop(a:line, a:linePtn, a:spaces, ["", "endfor"])
     elseif a:line[0] == "cls"
         call s:msg("Vimscript")
     endif
