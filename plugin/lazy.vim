@@ -57,6 +57,12 @@ fun! s:for(linePtn, spaces, var, args, braces)
     call cursor(a:linePtn + 1, a:spaces + len(s:indent))
 endfun
 
+fun! s:whileLoop(line, linePtn, spaces, braces)
+    call setline(a:linePtn, repeat(" ", a:spaces) . "while " . join(a:line[1:-1], " ") . a:braces[0])
+    call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . a:braces[1]])
+    call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+endfun
+
 fun! s:msg(lang)
     echohl WarningMsg
     echo a:lang "does not support "
@@ -71,9 +77,7 @@ fun! s:py(line, linePtn, spaces)
     elseif a:line[0] == 'if'
         
     elseif a:line[0] == 'wle'
-        call setline(a:linePtn, repeat(" ", a:spaces) . "while " . join(a:line[1:-1], " ") . ":")
-        call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
-        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+        call s:whileLoop(a:line, a:linePtn, a:spaces, [":", ""])
     elseif a:line[0] == 'for'
         call s:forLoop(a:line, a:linePtn, a:spaces, [":", ""])
     elseif a:line[0] == 'cls'
@@ -114,9 +118,7 @@ fun! s:vim(line, linePtn, spaces)
         call append(save, repeat(" ", a:spaces) . "endif")
         call cursor(a:linePtn + 1, a:spaces + len(s:indent))
     elseif a:line[0] == 'wle'
-        call setline(a:linePtn, repeat(" ", a:spaces) . "while " . join(a:line[1:-1], " "))
-        call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endwhile"])
-        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+        call s:whileLoop(a:line, a:linePtn, a:spaces, ["", "endwhile"])
     elseif a:line[0] == 'for'
         call s:forLoop(a:line, a:linePtn, a:spaces, ["", "endfor"])
     elseif a:line[0] == "cls"
