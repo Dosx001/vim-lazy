@@ -1,4 +1,5 @@
 let s:fileType = {
+            \    'py': {a, b, c -> s:py(a, b, c)},
             \   'vim': {a, b, c -> s:vim(a, b, c)},
             \}
 let s:indent = ""
@@ -27,11 +28,43 @@ fun! s:count(string)
     endfor
 endfun
 
-fun! s:for(linePtn, spaces, var, args)
+fun! s:for(linePtn, spaces, var, args, braces)
     let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
-    call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in range(" . args . ")")
-    call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfor"])
+    call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:var . " in range(" . args . ")" . a:braces[0])
+    let for = [repeat(" ", a:spaces) . s:indent]
+    if a:braces[1] != ""
+        let for = add(for, repeat(" ", a:spaces) . a:braces[1])
+    endif
+    call append(a:linePtn, for)
     call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+endfun
+
+fun! s:py(line, linePtn, spaces)
+    if a:line[0] == 'fun'
+        return
+    elseif a:line[0] == 'if'
+        
+    elseif a:line[0] == 'wle'
+        call setline(a:linePtn, repeat(" ", a:spaces) . "while " . join(a:line[1:-1], " ") . ":")
+        call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+    elseif a:line[0] == 'for'
+        if len(a:line) == 2
+            let args = split(a:line[1], ">")
+            call s:for(a:linePtn, a:spaces, "i", args, [":", ""])
+        elseif len(a:line) == 3
+            let args = split(a:line[2], ">")
+            call s:for(a:linePtn, a:spaces, a:line[1], args, [":", ""])
+        elseif a:line[2] == "in"
+            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in " . a:line[3] . ":")
+            call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+        elseif a:line[2] == "of"
+            call setline(a:linePtn, repeat(" ", a:spaces) . "for " . a:line[1] . " in range(len(" . a:line[3] . ")):")
+            call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+        endif
+    elseif a:line[0] == 'cls'
+        
+    endif
 endfun
 
 fun! s:vim(line, linePtn, spaces)
@@ -73,10 +106,10 @@ fun! s:vim(line, linePtn, spaces)
     elseif a:line[0] == 'for'
         if len(a:line) == 2
             let args = split(a:line[1], ">")
-            call s:for(a:linePtn, a:spaces, "i", args)
+            call s:for(a:linePtn, a:spaces, "i", args, ["", "endfor"])
         elseif len(a:line) == 3
             let args = split(a:line[2], ">")
-            call s:for(a:linePtn, a:spaces, a:line[1], args)
+            call s:for(a:linePtn, a:spaces, a:line[1], args, ["", "endfor"])
         elseif a:line[2] == "in"
             call append(a:linePtn, [repeat(" ", a:spaces) . s:indent, repeat(" ", a:spaces) . "endfun"])
         elseif a:line[2] == "of"
