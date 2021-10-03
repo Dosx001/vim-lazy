@@ -30,6 +30,41 @@ fun! s:count(string)
     endfor
 endfun
 
+fun! s:ifElse(line, linePtn, spaces, brace, elif, end)
+    let cods = []
+    let cod = ['if']
+    for arg in a:line[1:-1]
+        if arg == "ef"
+            let cod[-1] = cod[-1] . a:brace
+            let cods = add(cods, cod)
+            let cod = [a:elif]
+        elseif arg == "el"
+            let cod[-1] = cod[-1] . a:brace
+            let cods = add(cods, cod)
+            let cods = add(cods, ['else' . a:brace])
+        else
+            let cod = add(cod, arg)
+        endif
+    endfor
+    let line = repeat(" ", a:spaces)
+    if empty(cods)
+        let line = line . join(cod, " ") . a:brace
+    else
+        let line = line . join(cods[0], " ")
+    endif
+    call setline(a:linePtn, line)
+    call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
+    let save = a:linePtn + 1
+    for cod in cods[1:-1]
+        call append(save, [repeat(" ", a:spaces) . join(cod, " "), repeat(" ", a:spaces) . s:indent])
+        let save += 2
+    endfor
+    if !empty(a:end)
+        call append(save, repeat(" ", a:spaces) . a:end)
+    endif
+    call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+endfun
+
 fun! s:function(line, linePtn, spaces, braces, key)
     let args = []
     for arg in a:line[2:-1]
@@ -87,7 +122,7 @@ fun! s:py(line, linePtn, spaces)
     if a:line[0] == 'fun'
         call s:function(a:line, a:linePtn, a:spaces, [":", ""], "def")
     elseif a:line[0] == 'if'
-        
+        call s:ifElse(a:line, a:linePtn, a:spaces, ":", "elif", "")
     elseif a:line[0] == 'wle'
         call s:whileLoop(a:line, a:linePtn, a:spaces, [":", ""])
     elseif a:line[0] == 'for'
@@ -101,28 +136,7 @@ fun! s:vim(line, linePtn, spaces)
     if a:line[0] == 'fun'
         call s:function(a:line, a:linePtn, a:spaces, ["", "endfun"], "fun!")
     elseif a:line[0] == 'if'
-        let cods = []
-        let cod = ['if']
-        for arg in a:line[1:-1]
-            if arg == "ef"
-                let cods = add(cods, cod)
-                let cod = ['elseif']
-            elseif arg == "el"
-                let cods = add(cods, cod)
-                let cods = add(cods, ['else'])
-            else
-                let cod = add(cod, arg)
-            endif
-        endfor
-        call setline(a:linePtn, repeat(" ", a:spaces) . join(empty(cods) ? cod : cods[0], " "))
-        call append(a:linePtn, repeat(" ", a:spaces) . s:indent)
-        let save = a:linePtn + 1
-        for cod in cods[1:-1]
-            call append(save, [repeat(" ", a:spaces) . join(cod, " "), repeat(" ", a:spaces) . s:indent])
-            let save += 2
-        endfor
-        call append(save, repeat(" ", a:spaces) . "endif")
-        call cursor(a:linePtn + 1, a:spaces + len(s:indent))
+        call s:ifElse(a:line, a:linePtn, a:spaces, "", "elseif", "endif")
     elseif a:line[0] == 'wle'
         call s:whileLoop(a:line, a:linePtn, a:spaces, ["", "endwhile"])
     elseif a:line[0] == 'for'

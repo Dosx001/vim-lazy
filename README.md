@@ -11,7 +11,7 @@ if x ef y
 ```
 Else statement
 ```vim
-if x el y
+if x el
 ```
 # Function
 Nomral function
