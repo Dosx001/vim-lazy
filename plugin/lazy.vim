@@ -24,6 +24,8 @@ fun! Lazy()
         endfor
         if i != -1
             let s:spaces = s:line[0:i]
+        else
+            let s:spaces = ""
         endif
         let s:line = split(s:line[i + 1: -1], " ")
         if !empty(s:line)
@@ -35,6 +37,10 @@ endfun
 
 fun! s:indent(num)
     return s:spaces . repeat(s:ind, a:num)
+endfun
+
+fun! s:cursor()
+    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
 endfun
 
 fun! s:ifElse(brace, elif, end)
@@ -69,7 +75,7 @@ fun! s:ifElse(brace, elif, end)
     if !empty(a:end)
         call append(save, s:indent(0) . a:end)
     endif
-    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
+    call s:cursor()
 endfun
 
 fun! s:function(key, braces)
@@ -83,7 +89,7 @@ fun! s:function(key, braces)
         let line = add(line, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, line)
-    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
+    call s:cursor()
 endfun
 
 fun! s:forLoop(type, braces)
@@ -132,7 +138,7 @@ fun! s:for(var, args, braces)
         let for = add(for, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, for)
-    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
+    call s:cursor()
 endfun
 
 fun! s:forC(var, args, key)
@@ -162,7 +168,7 @@ fun! s:whileLoop(braces)
         let lines = add(lines, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, lines)
-    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
+    call s:cursor()
 endfun
 
 fun! s:msg(lang)
