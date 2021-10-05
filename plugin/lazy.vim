@@ -1,4 +1,5 @@
 let s:fileType = {
+            \   'cpp': {a -> s:cpp(a)},
             \    'py': {a -> s:py(a)},
             \   'vim': {a -> s:vim(a)},
             \}
@@ -82,13 +83,33 @@ fun! s:function(key, braces)
     call cursor(s:linePtn + 1, s:spaces + len(s:indent))
 endfun
 
-fun! s:forLoop(braces)
+fun! s:forLoop(type, braces)
     if len(s:line) == 2
         let args = split(s:line[1], ">")
-        call s:for("i", args, a:braces)
+        if a:type == 0
+            call s:for("i", args, a:braces)
+        else
+            if len(args) == 1
+                call s:forC("i", [0, args[0], 1], a:braces)
+            elseif len(args) == 2
+                call s:forC("i", [args[0], args[1], 1], a:braces)
+            else
+                call s:forC("i", [args[0], args[1], args[2]], a:braces)
+            endif
+        endif
     elseif len(s:line) == 3
         let args = split(s:line[2], ">")
-        call s:for(s:line[1], args, a:braces)
+        if a:type == 0
+            call s:for(s:line[1], args, a:braces)
+        else
+            if len(args) == 1
+                call s:forC(s:line[1], [0, args[0], 1], a:braces)
+            elseif len(args) == 2
+                call s:forC(s:line[1], [args[0], args[1], 1], a:braces)
+            else
+                call s:forC(s:line[1], [args[0], args[1], args[2]], a:braces)
+            endif
+        endif
     elseif s:line[2] == "in"
         call s:for(s:line[1], s:line[3], a:braces)
     elseif s:line[2] == "of"
@@ -111,6 +132,26 @@ fun! s:for(var, args, braces)
     call cursor(s:linePtn + 1, s:spaces + len(s:indent))
 endfun
 
+fun! s:forC(var, args, key)
+    let line = repeat(" ", s:spaces) . "for (" . a:key . " " . a:var . " = " . a:args[0] . "; "
+    if 0 < a:args[2]
+        let line = line . a:var . " < " . a:args[1] . "; " . a:var
+    else
+        let line = line . a:args[1] . " < " . a:var . "; " . a:var
+    endif
+    if a:args[2] == 1
+        let line = line . "++) {"
+    elseif a:args[2] == -1
+        let line = line . "--) {"
+    elseif 0 < a:args[2]
+        let line = line . " += " . a:args[2] . ") {"
+    else
+        let line = line . " -= " . a:args[2] . ") {"
+    endif
+    call setline(s:linePtn, line)
+    call append(s:linePtn, [repeat(" ", s:spaces) . s:indent, repeat(" ", s:spaces) . "}"])
+endfun
+
 fun! s:whileLoop(braces)
     call setline(s:linePtn, repeat(" ", s:spaces) . "while " . join(s:line[1:-1], " ") . a:braces[0])
     call append(s:linePtn, [repeat(" ", s:spaces) . s:indent, repeat(" ", s:spaces) . a:braces[1]])
@@ -125,6 +166,18 @@ fun! s:msg(lang)
     echohl None
 endfun
 
+fun! s:cpp(key)
+    if a:key == 'fun'
+        
+    elseif a:key == 'if'
+        
+    elseif a:key == 'wle'
+        
+    elseif a:key == 'for'
+        call s:forLoop(1, "int")
+    endif
+endfun
+
 fun! s:py(key)
     if a:key == 'fun'
         call s:function("def", [":", ""])
@@ -133,7 +186,7 @@ fun! s:py(key)
     elseif a:key == 'wle'
         call s:whileLoop([":", ""])
     elseif a:key == 'for'
-        call s:forLoop([":", ""])
+        call s:forLoop(0, [":", ""])
     elseif a:key == 'cls'
         
     endif
@@ -147,7 +200,7 @@ fun! s:vim(key)
     elseif a:key == 'wle'
         call s:whileLoop(["", "endwhile"])
     elseif a:key == 'for'
-        call s:forLoop(["", "endfor"])
+        call s:forLoop(0, ["", "endfor"])
     elseif a:key == "cls"
         call s:msg("Vimscript")
     endif
