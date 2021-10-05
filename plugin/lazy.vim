@@ -6,7 +6,7 @@ let s:fileType = {
 let s:ind = ""
 let s:line = []
 let s:linePtn = 0
-let s:spaces = 0
+let s:spaces = ""
 
 fun! Lazy()
     let Func = get(s:fileType, expand('%:e'), 0)
@@ -14,8 +14,18 @@ fun! Lazy()
         let sw = exists('*shiftwidth') ? shiftwidth() : &l:shiftwidth
         let s:ind = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
         let s:line = getline('.')
-        let s:spaces = s:count(s:line)
-        let s:line = split(s:line, ' ')
+        let i = -1
+        for char in split(s:line, '\zs')
+            if char == " " || char == "	"
+                let i += 1
+            else
+                break
+            endif
+        endfor
+        if i != -1
+            let s:spaces = s:line[0:i]
+        endif
+        let s:line = split(s:line[i + 1: -1], " ")
         if !empty(s:line)
             let s:linePtn = line('.')
             call Func(s:line[0])
@@ -23,19 +33,8 @@ fun! Lazy()
     endif
 endfun
 
-fun! s:count(string)
-    let i = 0
-    for char in split(a:string, '\zs')
-        if char == " "
-            let i += 1
-        else
-            return i
-        endif
-    endfor
-endfun
-
 fun! s:indent(num)
-    return repeat(" ", s:spaces) . repeat(s:ind, a:num)
+    return s:spaces . repeat(s:ind, a:num)
 endfun
 
 fun! s:ifElse(brace, elif, end)
@@ -70,7 +69,7 @@ fun! s:ifElse(brace, elif, end)
     if !empty(a:end)
         call append(save, s:indent(0) . a:end)
     endif
-    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
+    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
 endfun
 
 fun! s:function(key, braces)
@@ -84,7 +83,7 @@ fun! s:function(key, braces)
         let line = add(line, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, line)
-    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
+    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
 endfun
 
 fun! s:forLoop(type, braces)
@@ -133,7 +132,7 @@ fun! s:for(var, args, braces)
         let for = add(for, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, for)
-    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
+    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
 endfun
 
 fun! s:forC(var, args, key)
@@ -158,8 +157,12 @@ endfun
 
 fun! s:whileLoop(braces)
     call setline(s:linePtn, s:indent(0) . "while " . join(s:line[1:-1], " ") . a:braces[0])
-    call append(s:linePtn, [s:indent(1), s:indent(0) . a:braces[1]])
-    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
+    let lines = [s:indent(1)]
+    if !empty(a:braces[1])
+        let lines = add(lines, s:indent(0) . a:braces[1])
+    endif
+    call append(s:linePtn, lines)
+    call cursor(s:linePtn + 1, len(s:spaces) + len(s:ind))
 endfun
 
 fun! s:msg(lang)
