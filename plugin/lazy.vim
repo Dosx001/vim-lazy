@@ -3,7 +3,7 @@ let s:fileType = {
             \    'py': {a -> s:py(a)},
             \   'vim': {a -> s:vim(a)},
             \}
-let s:indent = ""
+let s:ind = ""
 let s:line = []
 let s:linePtn = 0
 let s:spaces = 0
@@ -12,7 +12,7 @@ fun! Lazy()
     let Func = get(s:fileType, expand('%:e'), 0)
     if Func != 0
         let sw = exists('*shiftwidth') ? shiftwidth() : &l:shiftwidth
-        let s:indent = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
+        let s:ind = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
         let s:line = getline('.')
         let s:spaces = s:count(s:line)
         let s:line = split(s:line, ' ')
@@ -34,6 +34,10 @@ fun! s:count(string)
     endfor
 endfun
 
+fun! s:indent(num)
+    return repeat(" ", s:spaces) . repeat(s:ind, a:num)
+endfun
+
 fun! s:ifElse(brace, elif, end)
     let cods = []
     let cod = ['if']
@@ -50,23 +54,23 @@ fun! s:ifElse(brace, elif, end)
             let cod = add(cod, arg)
         endif
     endfor
-    let line = repeat(" ", s:spaces)
+    let line = s:indent(0)
     if empty(cods)
         let line = line . join(cod, " ") . a:brace
     else
         let line = line . join(cods[0], " ")
     endif
     call setline(s:linePtn, line)
-    call append(s:linePtn, repeat(" ", s:spaces) . s:indent)
+    call append(s:linePtn, s:indent(1))
     let save = s:linePtn + 1
     for cod in cods[1:-1]
-        call append(save, [repeat(" ", s:spaces) . join(cod, " "), repeat(" ", s:spaces) . s:indent])
+        call append(save, [s:indent(0) . join(cod, " "), s:indent(1)])
         let save += 2
     endfor
     if !empty(a:end)
-        call append(save, repeat(" ", s:spaces) . a:end)
+        call append(save, s:indent(0) . a:end)
     endif
-    call cursor(s:linePtn + 1, s:spaces + len(s:indent))
+    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
 endfun
 
 fun! s:function(key, braces)
@@ -74,13 +78,13 @@ fun! s:function(key, braces)
     for arg in s:line[2:-1]
         let args = add(args, arg)
     endfor
-    call setline(s:linePtn, repeat(" ", s:spaces) . a:key . " " . s:line[1] . "(" . join(args, ', ') . ")" . a:braces[0])
-    let line = [repeat(" ", s:spaces) . s:indent]
+    call setline(s:linePtn, s:indent(0) . a:key . " " . s:line[1] . "(" . join(args, ', ') . ")" . a:braces[0])
+    let line = [s:indent(0)]
     if !empty(a:braces[1])
-        let line = add(line, repeat(" ", s:spaces) . a:braces[1])
+        let line = add(line, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, line)
-    call cursor(s:linePtn + 1, s:spaces + len(s:indent))
+    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
 endfun
 
 fun! s:forLoop(type, braces)
@@ -120,20 +124,20 @@ endfun
 fun! s:for(var, args, braces)
     if type(a:args) == 3
         let args = len(a:args) == 1 ? a:args[0] : join(a:args, ', ')
-        call setline(s:linePtn, repeat(" ", s:spaces) . "for " . a:var . " in range(" . args . ")" . a:braces[0])
+        call setline(s:linePtn, s:indent(0) . "for " . a:var . " in range(" . args . ")" . a:braces[0])
     else
-        call setline(s:linePtn, repeat(" ", s:spaces) . "for " . a:var . " in " . a:args . a:braces[0])
+        call setline(s:linePtn, s:indent(0) . "for " . a:var . " in " . a:args . a:braces[0])
     endif
-    let for = [repeat(" ", s:spaces) . s:indent]
+    let for = [s:indent(1)]
     if !empty(a:braces[1])
-        let for = add(for, repeat(" ", s:spaces) . a:braces[1])
+        let for = add(for, s:indent(0) . a:braces[1])
     endif
     call append(s:linePtn, for)
-    call cursor(s:linePtn + 1, s:spaces + len(s:indent))
+    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
 endfun
 
 fun! s:forC(var, args, key)
-    let line = repeat(" ", s:spaces) . "for (" . a:key . " " . a:var . " = " . a:args[0] . "; "
+    let line = s:indent(0) . "for (" . a:key . " " . a:var . " = " . a:args[0] . "; "
     if 0 < a:args[2]
         let line = line . a:var . " < " . a:args[1] . "; " . a:var
     else
@@ -149,13 +153,13 @@ fun! s:forC(var, args, key)
         let line = line . " -= " . a:args[2] . ") {"
     endif
     call setline(s:linePtn, line)
-    call append(s:linePtn, [repeat(" ", s:spaces) . s:indent, repeat(" ", s:spaces) . "}"])
+    call append(s:linePtn, [s:indent(1), s:indent(0) . "}"])
 endfun
 
 fun! s:whileLoop(braces)
-    call setline(s:linePtn, repeat(" ", s:spaces) . "while " . join(s:line[1:-1], " ") . a:braces[0])
-    call append(s:linePtn, [repeat(" ", s:spaces) . s:indent, repeat(" ", s:spaces) . a:braces[1]])
-    call cursor(s:linePtn + 1, s:spaces + len(s:indent))
+    call setline(s:linePtn, s:indent(0) . "while " . join(s:line[1:-1], " ") . a:braces[0])
+    call append(s:linePtn, [s:indent(1), s:indent(0) . a:braces[1]])
+    call cursor(s:linePtn + 1, s:spaces + len(s:ind))
 endfun
 
 fun! s:msg(lang)
