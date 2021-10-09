@@ -9,7 +9,7 @@ let s:linePtn = 0
 let s:spaces = ""
 
 fun! Lazy()
-    let Func = get(s:fileType, expand('%:e'), 0)
+    let Func = get(s:fileType, &ft, 0)
     if Func != 0
         let sw = exists('*shiftwidth') ? shiftwidth() : &l:shiftwidth
         let s:ind = (&l:expandtab || &l:tabstop !=# sw) ? repeat(' ', sw) : "\t"
@@ -22,11 +22,7 @@ fun! Lazy()
                 break
             endif
         endfor
-        if i != -1
-            let s:spaces = s:line[0:i]
-        else
-            let s:spaces = ""
-        endif
+        let s:spaces = i != -1 ? s:line[0:i] : ""
         let s:line = split(s:line[i + 1: -1], " ")
         if !empty(s:line)
             let s:linePtn = line('.')
